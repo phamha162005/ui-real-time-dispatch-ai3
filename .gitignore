@@ -1,0 +1,15 @@
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+data/*.sqlite3*
+.coverage
+
+# Local runtime databases and caches
+*.sqlite3*
+*.db
+*.db-journal
+*.pyo
+.env.*
+!.env.example

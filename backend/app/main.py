@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from .api.routes import router
 from .api.operations import router as operations_router
 from .api.enterprise import router as enterprise_router
+from .api.planning import router as planning_router
 from .store import Store
 from .adapters.enterprise import ReadOnlyJSONAdapter
 
@@ -14,13 +15,14 @@ ROOT=Path(__file__).resolve().parents[2]
 load_dotenv(ROOT/'.env')
 
 def create_app(database_path=None):
-    app=FastAPI(docs_url=None,redoc_url=None,title='Dispatch AI',version='1.6.0',description='Bản demo dùng dữ liệu giả lập. Bộ máy quy tắc hỗ trợ quyết định; chưa có mô hình AI huấn luyện. Không gửi lệnh điều xe thật. Khi triển khai công khai, bật APP_ENV=production và cấu hình DEMO_USERNAME/DEMO_PASSWORD.')
+    app=FastAPI(docs_url=None,redoc_url=None,title='Dispatch AI',version='1.7.0',description='Bản demo dùng dữ liệu giả lập. Bộ máy quy tắc hỗ trợ quyết định; chưa có mô hình AI huấn luyện. Không gửi lệnh điều xe thật. Khi triển khai công khai, bật APP_ENV=production và cấu hình DEMO_USERNAME/DEMO_PASSWORD.')
     path=database_path or os.getenv('DATABASE_PATH','data/dispatch.sqlite3')
     if not Path(path).is_absolute(): path=ROOT/path
     app.state.store=Store(path)
     app.include_router(router)
     app.include_router(operations_router)
     app.include_router(enterprise_router)
+    app.include_router(planning_router)
     @app.exception_handler(sqlite3.OperationalError)
     async def database_error(request:Request,exc):
         logging.exception('Database operation failed')

@@ -1,4 +1,4 @@
-# Kết nối dữ liệu doanh nghiệp v1.6
+# Kết nối dữ liệu doanh nghiệp v1.7
 
 Phiên bản này có connector **chỉ đọc JSON qua HTTPS** và luồng nhập **CSV/JSON → ánh xạ → kiểm tra → xem trước → xác nhận** cho TMS, GPS, ONP. API mặc định tắt. Chưa kết nối doanh nghiệp nào khi bàn giao.
 
@@ -88,3 +88,6 @@ Connector đọc đúng một phản hồi. Nếu API phân trang hoặc có kho
 Mã triển khai: `adapters/enterprise.py` phụ trách đọc mạng; `services/enterprise.py` phụ trách đọc tệp/ánh xạ; `schemas/enterprise.py` kiểm tra dữ liệu; `api/enterprise.py` quản lý batch, phiên bản và ghi SQLite. Các lớp TMSAdapter/GPSAdapter/ONPAdapter cũ tiếp tục báo chưa kết nối cho hợp đồng `fetch_trips`; GPS và ONP không bị giả định là danh sách chuyến. Luồng thật đi qua adapter JSON chỉ đọc và bước chuẩn hóa riêng.
 
 Bản bàn giao vẫn là ứng dụng local không có xác thực người dùng. Trước khi dùng khóa/dữ liệu doanh nghiệp trong môi trường nhiều người hoặc công khai, cần bổ sung đăng nhập, phân quyền thao tác nguồn, quản lý bí mật và nhật ký vận hành phù hợp. Chưa có bất kỳ endpoint gửi lệnh ra doanh nghiệp nào.
+
+## Email, chứng từ và AI tùy chọn
+Xem `CHAPTER3_WORKFLOW.md` và các biến `MAIL_*`, `OPENAI_API_KEY`, `DOCUMENT_AI_MODEL` trong `.env.example`. Mặc định không kết nối. IMAP dùng TLS với kiểm tra chứng chỉ/hostname, chọn thư mục readonly và BODY.PEEK, không sửa hộp thư. Không gửi dữ liệu cho AI trước khi người dùng đồng ý. PDF cần có lớp chữ, không có OCR. TMS vẫn chỉ đọc, không tự ghi lệnh ra ngoài.

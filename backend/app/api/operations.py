@@ -27,7 +27,7 @@ def preview(p:NoticeInput,request:Request):
         if 'vehicle_id' in values:warnings.append('Xe thay thế phải thuộc đội xe, đúng loại, đủ tải và chưa được phân công cho chuyến khác.')
         if values.get('incident'):warnings.append('Ghi nhận sự cố chưa tự dừng xe. Điều vận cần phát hành lệnh xử lý và chờ lái xe xác nhận.')
         old=baseline(s,db,t);diff=changes(old,values)
-        v={'id':uuid.uuid4().hex,'trip_id':t['id'],'trip_code':t['code'],'kind':p.kind,'text':p.text,'values':values,'changes':diff,'warnings':warnings,'source_revision':t['revision'],'before':old,'status':'pending','created_at':c['now'],'real_at':utcnow().isoformat(),'method':'Đọc văn bản có nhãn bằng quy tắc; cần nhân viên xác minh'}
+        v={'id':uuid.uuid4().hex,'trip_id':t['id'],'trip_code':t['code'],'kind':p.kind,'text':p.text,'values':values,'changes':diff,'warnings':warnings,'source_revision':t['revision'],'before':old,'status':'pending','created_at':c['now'],'real_at':utcnow().isoformat(),'source_text':p.source_text,'source_name':p.source_name,'read_method':p.read_method,'method':'Đối chiếu trường đã trích xuất bằng quy tắc; cần nhân viên xác minh'}
         db.execute('INSERT INTO notices VALUES(?,?)',(v['id'],json.dumps(v,ensure_ascii=False)))
         return v
 
@@ -71,6 +71,11 @@ def issue(p:OrderInput,request:Request):
         c=s.tick(db);t=trip_by_id(s,db,p.trip_id)
         if t['status']=='hoan_thanh':raise HTTPException(409,'Không phát hành lệnh cho chuyến đã hoàn thành')
         if not t.get('vehicle_id'):raise HTTPException(422,'Chọn và phân công xe cho chuyến trước khi phát hành lệnh')
+        case=None
+        if p.comparison_id:
+            case=s.get(db,'case:'+p.comparison_id)
+            if not case or case['status']!='approved' or case['trip_id']!=t['id'] or case['source_revision']!=t['revision']:
+                raise HTTPException(409,'Phương án phê duyệt không còn khớp chuyến; phân tích và duyệt lại.')
         previous=[o for o in order_rows(db) if o['trip_id']==t['id']]
         version=max((o['version'] for o in previous),default=0)
         if p.trip_revision!=t['revision'] or p.expected_version!=version:raise HTTPException(409,'Chuyến hoặc phiên bản lệnh đã thay đổi; tải lại trước khi phát hành')
@@ -78,7 +83,7 @@ def issue(p:OrderInput,request:Request):
             if o['active']:
                 o.update(active=False,superseded_at=c['now']);save_order(db,o)
         event={'event':'sent','sim_at':c['now'],'real_at':utcnow().isoformat()}
-        o={'trip_id':t['id'],'trip_code':t['code'],'vehicle_id':t['vehicle_id'],'driver':p.driver,'version':version+1,'source_revision':t['revision'],'action':p.action,'instructions':p.instructions,'trip_snapshot':{k:t[k] for k in ['origin','destination','cutoff','vehicle_id']},'active':True,'status':'sent','sent_at':c['now'],'received_at':None,'confirmed_at':None,'sent_elapsed':c.get('elapsed_minutes',0),'confirmed_elapsed':None,'events':[event]}
+        o={'trip_id':t['id'],'trip_code':t['code'],'vehicle_id':t['vehicle_id'],'driver':p.driver,'version':version+1,'source_revision':t['revision'],'action':p.action,'instructions':p.instructions,'trip_snapshot':{k:t[k] for k in ['origin','destination','cutoff','vehicle_id']},'active':True,'status':'sent','sent_at':c['now'],'received_at':None,'confirmed_at':None,'sent_elapsed':c.get('elapsed_minutes',0),'confirmed_elapsed':None,'events':[event],'comparison_id':p.comparison_id,'approved_option':case['options'][case['selected_index']] if case else None}
         id=db.execute('INSERT INTO orders(payload) VALUES(?)',(json.dumps(o,ensure_ascii=False),)).lastrowid
         return {**o,'id':id}
 

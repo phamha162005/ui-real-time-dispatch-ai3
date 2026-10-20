@@ -7,7 +7,7 @@ const date=s=>new Date(s).toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh
 const shortTime=s=>time(s).slice(0,5);
 const riskNames={thap:'Thấp',trung_binh:'Trung bình',cao:'Cao'};
 const statusNames={cho_lenh:'Chờ lệnh',dang_chay:'Đang chạy',tam_dung:'Tạm dừng',hoan_thanh:'Hoàn thành'};
-const titles={enterprise:['Kết nối doanh nghiệp','Nhập tệp hoặc lấy dữ liệu từ TMS, GPS, ONP.'],notices:['Thông báo thay đổi','Đối chiếu lịch tàu, booking và lệnh bị ảnh hưởng.'],pilot:['Tái phân bổ phương tiện','Xét toàn bộ xe đầu vào và so sánh tối đa 03 phương án tốt nhất.'],orders:['Lệnh điều xe & xác nhận','Quản lý phiên bản, dấu thời gian và phản hồi của lái xe.'],dashboard:['Tổng quan vận hành','Điều phối vận tải thông minh theo thời gian thực.'],trips:['Quản lý chuyến xe','Dữ liệu bạn nhập trực tiếp quyết định ETA và rủi ro cut-off.'],dispatch:['Hỗ trợ quyết định điều xe','So sánh phương án minh bạch. Nhân viên điều vận là người quyết định.'],alerts:['Trung tâm cảnh báo','Theo dõi rủi ro vận hành và chất lượng dữ liệu.'],reports:['Báo cáo vận hành','Theo dõi hiệu suất vận tải, sử dụng phương tiện và chi phí.'],sources:['Nguồn dữ liệu & tích hợp','Quản lý trạng thái kết nối và thông tin nguồn dữ liệu.']};
+const titles={costs:['So sánh chi phí & xử lý thay đổi','Lọc ràng buộc, so sánh chi phí tăng thêm và ghi nhận phê duyệt.'],enterprise:['Kết nối doanh nghiệp','Nhập tệp hoặc lấy dữ liệu từ TMS, GPS, ONP.'],notices:['Thông báo thay đổi','Đối chiếu lịch tàu, booking và lệnh bị ảnh hưởng.'],pilot:['Tái phân bổ phương tiện','Xét toàn bộ xe đầu vào và so sánh tối đa 03 phương án tốt nhất.'],orders:['Lệnh điều xe & xác nhận','Quản lý phiên bản, dấu thời gian và phản hồi của lái xe.'],dashboard:['Tổng quan vận hành','Điều phối vận tải thông minh theo thời gian thực.'],trips:['Quản lý chuyến xe','Dữ liệu bạn nhập trực tiếp quyết định ETA và rủi ro cut-off.'],dispatch:['Hỗ trợ quyết định điều xe','So sánh phương án minh bạch. Nhân viên điều vận là người quyết định.'],alerts:['Trung tâm cảnh báo','Theo dõi rủi ro vận hành và chất lượng dữ liệu.'],reports:['Báo cáo vận hành','Theo dõi hiệu suất vận tải, sử dụng phương tiện và chi phí.'],sources:['Nguồn dữ liệu & tích hợp','Quản lý trạng thái kết nối và thông tin nguồn dữ liệu.']};
 let snap=null,analysis=null,editing=null,polling=false,toastTimer,confirmFn;
 let currentPage='dashboard';
 async function api(path,options={}){
@@ -45,7 +45,7 @@ function render(){
  const selected=$('analysisTrip').value;
  $('analysisTrip').innerHTML=snap.trips.filter(t=>t.status!=='hoan_thanh').map(t=>`<option value="${t.id}">${esc(t.code)} — ${esc(t.destination)}</option>`).join('');
  if([...$('analysisTrip').options].some(x=>x.value===selected))$('analysisTrip').value=selected;
- renderSummary();window.DispatchMap?.update(snap.trips);window.OperationsUI?.render(snap);
+ renderSummary();window.DispatchMap?.update(snap.trips);window.OperationsUI?.render(snap);window.PlanningUI?.update(snap);
 }
 function updateClocks(){$('realClock').textContent=time(new Date());}
 function table(trips,full){

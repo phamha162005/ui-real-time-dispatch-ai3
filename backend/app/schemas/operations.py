@@ -6,6 +6,9 @@ class Input(BaseModel):
     model_config=ConfigDict(extra='forbid',str_strip_whitespace=True,allow_inf_nan=False)
 
 class NoticeInput(Input):
+    source_text:str=Field(default='',max_length=12000)
+    source_name:str=Field(default='',max_length=500)
+    read_method:str=Field(default='manual',max_length=120)
     trip_id:int
     kind:Literal['booking','schedule','pickup','delivery','container','vehicle','incident']
     text:str=Field(min_length=5,max_length=12000)
@@ -14,6 +17,7 @@ class Approval(Input):
     confirmed:bool=False
 
 class OrderInput(Approval):
+    comparison_id:str|None=Field(default=None,max_length=40)
     trip_id:int
     trip_revision:int
     expected_version:int=Field(ge=0)

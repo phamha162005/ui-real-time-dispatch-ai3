@@ -2,7 +2,18 @@
 
 Ứng dụng quản lý chuyến xe và hỗ trợ quyết định điều phối vận tải. Backend FastAPI, frontend HTML/CSS/JavaScript, cơ sở dữ liệu SQLite.
 
-## Bản v1.6.0
+## Bản v1.7.0
+
+- Email & chứng từ: nhập `.eml`, `.pdf` có chữ, `.txt` hoặc dán nội dung; giải mã MIME, đọc PDF đính kèm, trích trường Việt/Anh, tìm chuyến theo booking/mã chuyến/container. Kiểm tra và xác nhận riêng trước khi cập nhật. Lưu nội dung nguồn cùng thông báo để đối chiếu.
+- AI trích xuất tùy chọn qua OpenAI: cần `OPENAI_API_KEY`, `DOCUMENT_AI_MODEL` đã được doanh nghiệp duyệt; chỉ gửi nội dung khi người dùng xác nhận. Không có key vẫn dùng chế độ quy tắc. Không tự chạy chỉ dẫn trong email hoặc tự sửa chuyến.
+- Hộp thư IMAP TLS chỉ đọc theo yêu cầu: tối đa 10 thư gần nhất, từng thư tối đa 2 MB; không gửi/xóa/đánh dấu đã đọc. Cần IT cấu hình `MAIL_READ_ENABLED`, `MAIL_IMAP_HOST`, `MAIL_ALLOWED_HOSTS`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FOLDER` và cấp quyền. Không lưu thông tin đăng nhập trên giao diện hoặc trong Git. Hộp thư yêu cầu OAuth riêng chưa hỗ trợ đăng nhập OAuth.
+- So sánh chi phí xử lý thay đổi: 2–9 phương án tiếp tục/chờ/kéo về/dời lịch/đổi xe/thuê ngoài/đổi thứ tự/ghép lệnh/lệnh thay thế. Kiểm tra moóc, tải trọng, giờ làm việc, booking, an toàn, cut-off trước khi chọn. Sáu khoản chi phí để trống được coi là thiếu dữ liệu; không mặc định bằng 0. Không kết luận rẻ nhất nếu còn phương án đủ điều kiện thiếu chi phí.
+- Ghi nhận phê duyệt, hạn mức, căn cứ; chuẩn bị lệnh từ phương án đã duyệt và kiểm tra phiên bản chuyến ở backend. Bản này chưa có phân quyền trưởng bộ phận riêng.
+- Theo dõi kết quả thực tế, chênh lệch chi phí dự kiến/thực tế, thời gian lập bảng đến duyệt; xuất bảng CSV. Không suy ra tiết kiệm khi chưa có dữ liệu kỳ cơ sở.
+
+Luồng chi tiết theo cả năm giải pháp Chương 3 nằm trong `CHAPTER3_WORKFLOW.md`.
+
+## Chức năng nền tảng
 
 - Giao diện Dispatch AI, không gắn tên doanh nghiệp.
 - Giờ thực theo Việt Nam; ETA, tiến độ chuyến và hạn phản hồi tự cập nhật. Không có đồng hồ kịch bản, nút tua thời gian hay lối vào kiểm thử API trên giao diện điều vận.

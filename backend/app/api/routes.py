@@ -39,6 +39,9 @@ def sync_alerts(s,db,trips,c):
             wanted[key]={'kind':kind,'trip_id':t['id'],'level':'trung_binh','title':t['code']+(' • Thiếu xác nhận booking/container' if kind=='missing' else ' • Lỗi nguồn dữ liệu mô phỏng; cần xác minh thủ công')}
     for t in trips:
         n=s.get(db,'notice-baseline:'+str(t['id'])) or {}
+        if n.get('incident') and t['status']!='hoan_thanh':
+            key=f"vehicle-incident:{t['id']}:{t['revision']}"
+            wanted[key]={'kind':'incident','trip_id':t['id'],'level':'cao','title':t['code']+' • Sự cố xe: '+n['incident']+'; cần điều vận xử lý'}
         if n.get('cancelled') and t['status']!='hoan_thanh':
             key=f"booking-cancelled:{t['id']}:{t['revision']}"
             wanted[key]={'kind':'booking','trip_id':t['id'],'level':'cao','title':t['code']+' • Booking đã hủy; kiểm tra và phát hành lệnh xử lý cho lái xe'}

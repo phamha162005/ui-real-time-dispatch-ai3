@@ -1,7 +1,7 @@
 # U&I Real-Time Dispatch AI
 ## Điều phối vận tải thông minh theo thời gian thực
 
-Bản v1.4 bổ sung đối chiếu lịch tàu/booking, tái phân bổ theo danh sách xe đầu vào (bộ 03 xe của mục 3.3.3 là dữ liệu mẫu) và luồng phiên bản lệnh – lái xe nhận/xác nhận theo mục 3.3.4. Các trang điều vận, ETA/cut-off, bản đồ và phân tích theo trọng số vẫn hoạt động như trước.
+Bản v1.5 làm gọn giao diện kết nối với Field Mapping (ghép cột dữ liệu), xem trước dạng bảng, đồng hồ giờ Việt Nam và vị trí xe từ nguồn GPS trên Tổng quan. Bổ sung thông báo đổi điểm lấy/giao, container, phương tiện và sự cố xe. ETA/cut-off mẫu vẫn tính theo đồng hồ kịch bản, nằm trong mục “Kịch bản thử nghiệm”.
 
 Website phục vụ trình diễn đề tài AI hỗ trợ ra quyết định điều xe tại U&I Logistics. Backend Python + FastAPI, giao diện HTML/CSS/JavaScript, SQLite. Đội xe vận hành mặc định và các thông báo mẫu là dữ liệu giả lập. Trang “Tái phân bổ xe” nhận danh sách người dùng nhập; bộ mẫu báo cáo dùng các số liệu được trình bày trong hai file báo cáo người dùng cung cấp; đây là bài toán minh họa có giả định, không phải GPS trực tiếp hoặc đánh giá hiệu quả thực tế.
 
@@ -63,7 +63,7 @@ Ví dụ `DATABASE_PATH=data/dispatch.sqlite3`. Đường dẫn tương đối �
 ## 2. Kịch bản trình diễn 5–7 phút
 
 1. **Tổng quan**: giới thiệu đồng hồ thật Việt Nam và đồng hồ điều hành (mô phỏng). Thông tin về dữ liệu mẫu và giới hạn kết nối nằm trong trang Nguồn dữ liệu. Đồng hồ mô phỏng mặc định 08:00 ngày tạo dữ liệu, đang tạm dừng. Bản đồ đường phố OpenStreetMap cho phép kéo, zoom, mở rộng và chọn chuyến. Điểm mặc định chỉ tham chiếu khu vực KCN Sóng Thần / Cát Lái, chưa xác minh cổng kho/cảng; các địa chỉ chung như “Kho Bình Dương” cần nhập tọa độ. Không hiển thị vị trí xe GPS khi chưa kết nối nguồn GPS.
-2. **Bắt đầu** rồi chọn **60x**: một giây thật bằng một phút mô phỏng. Tạm dừng, tiếp tục, hoặc bấm **+30 phút** để tua nhanh. Thời gian thật vẫn chạy độc lập.
+2. Mở **Kịch bản thử nghiệm**, bấm **Bắt đầu** rồi chọn **60x**: một giây thật bằng một phút mô phỏng. Tạm dừng, tiếp tục, hoặc bấm **+30 phút** để tua nhanh. Thời gian thật vẫn chạy độc lập.
 3. Theo dõi **UI-1002**, chuyến chờ lệnh: khi chưa khởi hành, ETA lùi theo thời gian, dự phòng giảm. **UI-1001** đang chạy: công việc còn lại giảm, ETA ổn định nếu không phát sinh chậm trễ. Khi hoàn thành, thời điểm hoàn thành được giữ nguyên.
 4. Vào **Quản lý chuyến xe**, thêm một chuyến hoặc sửa UI-1002. Thử tăng chậm thêm 30 phút, giảm cut-off hoặc đổi tải hàng. Lưu để thấy ETA, rủi ro và báo cáo đổi ngay. Khi sửa, các thời lượng nhập là khối lượng công việc **còn lại** tại thời điểm lưu.
 5. Vào **Hỗ trợ quyết định**, chọn UI-1002; phân tích với ưu tiên đúng hạn rồi ưu tiên chi phí. Dữ liệu mẫu cho phép so sánh ít nhất hai xe phù hợp. Mở mục công thức để giải thích điểm. Nếu tải quá lớn hoặc xe bận, số phương án hợp lệ có thể giảm; hệ thống không tạo phương án không đáp ứng ràng buộc chỉ để đủ hai xe.

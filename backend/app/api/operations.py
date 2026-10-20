@@ -22,7 +22,11 @@ def preview(p:NoticeInput,request:Request):
     with s.tx() as db:
         c=s.tick(db);t=trip_by_id(s,db,p.trip_id)
         if t['status']=='hoan_thanh':raise HTTPException(409,'Chuyến đã hoàn thành; chỉ xem lịch sử, không điều chỉnh')
-        values,warnings=parse_notice(p.text);old=baseline(s,db,t);diff=changes(old,values)
+        values,warnings=parse_notice(p.text)
+        if 'origin' in values or 'destination' in values:warnings.append('Đổi điểm lấy/giao: cần kiểm tra lại quãng đường và thời gian di chuyển trong Quản lý chuyến xe.')
+        if 'vehicle_id' in values:warnings.append('Xe thay thế phải thuộc đội xe, đúng loại, đủ tải và chưa được phân công cho chuyến khác.')
+        if values.get('incident'):warnings.append('Ghi nhận sự cố chưa tự dừng xe. Điều vận cần phát hành lệnh xử lý và chờ lái xe xác nhận.')
+        old=baseline(s,db,t);diff=changes(old,values)
         v={'id':uuid.uuid4().hex,'trip_id':t['id'],'trip_code':t['code'],'kind':p.kind,'text':p.text,'values':values,'changes':diff,'warnings':warnings,'source_revision':t['revision'],'before':old,'status':'pending','created_at':c['now'],'real_at':utcnow().isoformat(),'method':'Đọc văn bản có nhãn bằng quy tắc; cần nhân viên xác minh'}
         db.execute('INSERT INTO notices VALUES(?,?)',(v['id'],json.dumps(v,ensure_ascii=False)))
         return v
@@ -37,7 +41,7 @@ def apply_notice(id:str,p:Approval,request:Request):
             raise HTTPException(409,'Dữ liệu đã đổi; đọc và đối chiếu thông báo lại')
         if not n['changes']:raise HTTPException(422,'Không có thay đổi để cập nhật')
         data=TripInput.model_validate({k:t[k] for k in TripInput.model_fields if k in t}).model_dump(mode='json')
-        for k in ['cutoff','origin','destination']:
+        for k in ['cutoff','origin','destination','vehicle_id']:
             if k in n['values']:data[k]=n['values'][k]
         if n['values'].get('cancelled'):data['data_issue']='missing'
         # An elapsed job keeps the current remaining work when its metadata changes.

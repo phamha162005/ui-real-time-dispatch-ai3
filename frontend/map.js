@@ -9,6 +9,7 @@
  };
  const storageKey='ui-dispatch-map-coordinates-v1';
  let stored={};try{stored=JSON.parse(localStorage.getItem(storageKey)||'{}')||{};}catch(_){}
+ let gpsLayer,gpsRows=[],gpsVisible=false,gpsLoading=false,gpsVersion=0;
  let map,points,tripList=[],signature='',tileOK=false;
  const key=t=>JSON.stringify([t.id,t.origin,t.destination]);
  function parseCoordinate(value){
@@ -39,7 +40,7 @@
   url.search=new URLSearchParams({api:'1',origin:origin?origin.join(','):t.origin+', Việt Nam',destination:destination?destination.join(','):t.destination+', Việt Nam',travelmode:'driving'}).toString();
   byId('googleDirections').href=url.href;
   byId('mapOrigin').value=origin?.join(', ')||'';byId('mapDestination').value=destination?.join(', ')||'';
-  byId('mapLocationNote').textContent=stored[key(t)]?'Đang dùng tọa độ bạn đã lưu. Chưa có nguồn GPS phương tiện.':(origin||destination?'Điểm mặc định chỉ tham chiếu khu vực, chưa xác nhận cổng kho/cảng. Nhập tọa độ chính xác khi sử dụng.':'Chưa xác định tọa độ cho tuyến này. Nhập vị trí hoặc mở Google Maps để tìm địa chỉ.');
+  byId('mapLocationNote').textContent=stored[key(t)]?'Điểm lấy/giao đang dùng tọa độ đã lưu. Chọn Vị trí xe GPS để xem phương tiện.':(origin||destination?'Điểm mặc định chỉ tham chiếu khu vực, chưa xác nhận cổng kho/cảng. Nhập tọa độ chính xác khi sử dụng.':'Chưa xác định tọa độ cho tuyến này. Nhập vị trí hoặc mở Google Maps để tìm địa chỉ.');
   if(!init())return;
   points.clearLayers();
   [['origin',origin,'A',t.origin],['destination',destination,'B',t.destination]].forEach(([side,p,label,name])=>{
@@ -62,6 +63,39 @@
   if(trips.length)draw(!previous||!trips.some(t=>String(t.id)===previous));
   else{points?.clearLayers();byId('mapStatus').textContent='Chưa có chuyến xe.';byId('mapLocationNote').textContent='Thêm chuyến xe để định vị điểm lấy và giao hàng.';}
  }
+ function drawGPS(fit=false){
+  if(!gpsVisible){gpsLayer?.clearLayers();return;}
+  if(!init())return;
+  if(!gpsLayer)gpsLayer=L.featureGroup().addTo(map);
+  gpsLayer.clearLayers();
+  for(const r of gpsRows){
+   const age=(Date.now()-new Date(r.source_updated_at).getTime())/60000;
+   const stale=age>5||age<0,stamp=new Date(r.source_updated_at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'});
+   const icon=L.divIcon({className:'vehicle-pin'+(stale?' stale':''),html:'<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M3 5h11v11H3zM15 9h4l3 4v3h-7z"/><circle cx="7" cy="18" r="2" fill="currentColor"/><circle cx="18" cy="18" r="2" fill="currentColor"/></svg>' ,iconSize:[34,34],iconAnchor:[17,17]});
+   L.marker([r.latitude,r.longitude],{icon,title:r.vehicle_id}).bindPopup(`<b>${safe(r.vehicle_id)}</b><br>${r.speed_kmh===0?'Đang dừng tại lần ghi nhận':safe(r.speed_kmh)+' km/h tại lần ghi nhận'}<br>${safe(stamp)} (VN)<br>${age<0?'Thời điểm nguồn nằm trong tương lai':age>5?'Dữ liệu đã cũ · '+Math.floor(age)+' phút trước':'Ghi nhận '+Math.floor(age)+' phút trước'}<br><small>${r.ingestion_method==='file'?'Nguồn: tệp GPS đã nhập':'Nguồn: lần đọc API gần nhất'} · Không nội suy vị trí</small>`).addTo(gpsLayer);
+  }
+  if(fit&&gpsRows.length)map.fitBounds(gpsLayer.getBounds(),{padding:[45,45],maxZoom:14});
+ }
+ async function loadGPS(fit=false){
+  if(gpsLoading||!gpsVisible)return;
+  gpsLoading=true;const version=gpsVersion;
+  byId('mapGpsStatus').textContent='Đang lấy vị trí xe…';
+  try{
+   const res=await fetch('/api/enterprise/GPS/data');if(!res.ok)throw Error();
+   const result=await res.json();if(version!==gpsVersion)return;
+   gpsRows=(result.records||[]).filter(r=>validPoint([r.latitude,r.longitude]));drawGPS(fit);
+   const stopped=gpsRows.filter(r=>r.speed_kmh===0).length;
+   byId('mapGpsStatus').innerHTML=gpsRows.length?`<b>${gpsRows.length} xe GPS</b> · ${stopped} xe dừng tại lần ghi nhận · ${result.total_count>gpsRows.length?'Hiển thị tối đa 1.000 xe · ':''}Bấm biểu tượng xe để xem thời gian nguồn.`:'Chưa có vị trí xe. <a class="text-link" href="#enterprise">Nhập dữ liệu GPS hoặc kết nối nguồn →</a>';
+  }catch(_){if(version!==gpsVersion)return;gpsRows=[];gpsLayer?.clearLayers();byId('mapGpsStatus').textContent='Chưa tải được GPS. Bấm Vị trí xe GPS để thử lại.';}
+  finally{gpsLoading=false;}
+ }
+ byId('mapVehicles').addEventListener('click',()=>{
+  gpsVisible=!gpsVisible;gpsVersion++;byId('mapVehicles').setAttribute('aria-pressed',String(gpsVisible));
+  if(gpsVisible)loadGPS(true);else{drawGPS();byId('mapGpsStatus').textContent='Đã ẩn vị trí xe GPS.';}
+ });
+ window.addEventListener('enterpriseDataChanged',()=>{if(gpsVisible)loadGPS();});
+ window.addEventListener('demoReset',()=>{gpsVersion++;gpsRows=[];gpsLayer?.clearLayers();if(gpsVisible)loadGPS();});
+ setInterval(()=>{if(gpsVisible&&!document.hidden&&(!location.hash||location.hash==='#dashboard'))loadGPS();},15000);
  byId('mapTrip').addEventListener('change',()=>draw(true));
  byId('mapFit').addEventListener('click',()=>draw(true));
  byId('mapExpand').addEventListener('click',()=>{

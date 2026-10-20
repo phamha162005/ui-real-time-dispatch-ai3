@@ -6,13 +6,13 @@ from datetime import datetime
 from fastapi import HTTPException
 from .eta import dt
 
-BASELINE_KEYS={'booking':'Booking','vessel':'Tên tàu','voyage':'Chuyến tàu','ship_eta':'ETA tàu','ship_etd':'ETD tàu','cutoff':'Cut-off','origin':'Điểm lấy','destination':'Điểm giao','cancelled':'Hủy booking'}
+BASELINE_KEYS={'booking':'Booking','vessel':'Tên tàu','voyage':'Chuyến tàu','ship_eta':'ETA tàu','ship_etd':'ETD tàu','cutoff':'Cut-off','origin':'Điểm lấy','destination':'Điểm giao','cancelled':'Hủy booking','container_id':'Container','vehicle_id':'Phương tiện','incident':'Sự cố xe'}
 
 def fold(s):
     return ''.join(c for c in unicodedata.normalize('NFD',s.lower().replace('đ','d')) if unicodedata.category(c)!='Mn').strip()
 
 def parse_notice(text):
-    aliases={'booking':'booking','ma booking':'booking','ten tau':'vessel','tau':'vessel','chuyen tau':'voyage','eta tau':'ship_eta','etd tau':'ship_etd','cut-off':'cutoff','cutoff':'cutoff','diem lay':'origin','diem giao':'destination','trang thai':'cancelled'}
+    aliases={'booking':'booking','ma booking':'booking','ten tau':'vessel','tau':'vessel','chuyen tau':'voyage','eta tau':'ship_eta','etd tau':'ship_etd','cut-off':'cutoff','cutoff':'cutoff','diem lay':'origin','diem giao':'destination','trang thai':'cancelled','container':'container_id','ma container':'container_id','phuong tien':'vehicle_id','bien so':'vehicle_id','ma xe':'vehicle_id','su co':'incident','su co xe':'incident'}
     values={};warnings=[]
     for line in text.splitlines():
         if ':' not in line:continue
@@ -30,13 +30,14 @@ def parse_notice(text):
             elif fold(value) in ['hoat dong','con hieu luc','active']:value=False
             else:
                 warnings.append('Trạng thái chưa nhận diện; chỉ hỗ trợ Hủy hoặc Hoạt động.');continue
+        elif field=='incident' and fold(value) in ['da xu ly','da khac phuc','resolved']:value=''
         elif len(value)>120:raise HTTPException(422,f'{BASELINE_KEYS[field]} quá dài (tối đa 120 ký tự)')
         values[field]=value
-    if not values:raise HTTPException(422,'Chưa đọc được trường nào. Dùng mẫu nhãn Booking, Cut-off, Điểm lấy, Điểm giao, Tên tàu hoặc Trạng thái.')
+    if not values:raise HTTPException(422,'Chưa đọc được trường nào. Dùng nhãn Booking, Cut-off, Điểm lấy, Điểm giao, Container, Phương tiện hoặc Sự cố.')
     return values,warnings
 
 def baseline(s,db,t):
-    return {**{'booking':'BK-'+t['code'],'vessel':'','voyage':'','ship_eta':'','ship_etd':'','cancelled':False},**(s.get(db,'notice-baseline:'+str(t['id'])) or {}),**{k:t[k] for k in ['cutoff','origin','destination']}}
+    return {**{'booking':'BK-'+t['code'],'vessel':'','voyage':'','ship_eta':'','ship_etd':'','cancelled':False,'container_id':'','incident':''},**(s.get(db,'notice-baseline:'+str(t['id'])) or {}),**{k:t[k] for k in ['cutoff','origin','destination','vehicle_id']}}
 
 def changes(before,after):
     result=[]

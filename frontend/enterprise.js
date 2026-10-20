@@ -5,15 +5,21 @@
  let rows=[],batch=null,source='TMS',epoch=0,mappingDirty=false,map,marker,loaded=false;
  const stamp=v=>v?time(v)+' '+date(v)+' (VN)':'—';
  function clearPreview(){batch=null;q('enterprisePreview').innerHTML='';}
- function markDirty(){mappingDirty=true;epoch++;clearPreview();q('enterpriseReadFile').disabled=true;q('enterpriseReadApi').disabled=true;}
+ function markDirty(){mappingDirty=true;epoch++;clearPreview();q('enterpriseReadFile').disabled=true;q('enterpriseReadApi').disabled=true;q('enterpriseMappingStatus').textContent='Có thay đổi · Bấm Lưu ghép cột để tiếp tục';}
  function drawConfig(s){
   q('enterpriseRowsPath').value=s.config.rows_path;
-  q('enterpriseMappings').innerHTML=s.fields.map(k=>`<label class="field"><span>${esc(names[k]||k)} <small>${esc(k)}</small></span><input data-map-field="${esc(k)}" value="${esc(s.config.mapping[k]||k)}" maxlength="150" required></label>`).join('');
+  const row=k=>`<label class="mapping-row"><span class="mapping-name">${esc(names[k]||k)}<code>${esc(k)}</code></span><span class="mapping-arrow" aria-hidden="true">←</span><input data-map-field="${esc(k)}" aria-label="Tên cột nguồn cho ${esc(names[k]||k)}" value="${esc(s.config.mapping[k]||k)}" placeholder="Tên cột trong tệp" maxlength="150" required></label>`;
+  const primary=['code','vehicle_id','origin','destination','start_at','cutoff','status','source_updated_at'];
+  const basic=source==='TMS'?s.fields.filter(k=>primary.includes(k)):s.fields;
+  const extra=source==='TMS'?s.fields.filter(k=>!primary.includes(k)):[];
+  q('enterpriseMappings').innerHTML=basic.map(row).join('')+(extra.length?`<details class="help-details mapping-more"><summary>Các cột bổ sung (${extra.length})</summary><p>Kiểm tra thêm nếu tệp của bạn khác tệp mẫu.</p>${extra.map(row).join('')}</details>`:'');
+  q('enterpriseMappingStatus').textContent='Đã lưu · Có thể xem trước dữ liệu';
+  q('enterpriseApiSummary').textContent=s.checks.ready?'Sẵn sàng kiểm tra kết nối.': 'Chưa bật API · Bạn vẫn có thể nhập tệp.';
   const checks={read_enabled:'Đã cho phép đọc API',endpoint_configured:'URL HTTPS đã cấu hình',host_allowed:'Hostname đã cho phép',authentication_configured:'Xác thực đã cấu hình'};
   q('enterpriseChecks').innerHTML=Object.entries(checks).map(([k,v])=>`<div class="enterprise-check ${s.checks[k]?'ok':''}"><b>${s.checks[k]?'✓':'○'}</b><span>${v}</span></div>`).join('');
   q('enterpriseReadApi').disabled=!s.checks.ready;q('enterpriseReadFile').disabled=false;
   q('enterpriseTemplate').href='/api/enterprise/'+source+'/template.csv';
-  q('enterpriseTestStatus').textContent=s.last_test?`Lần kiểm tra ${stamp(s.last_test.attempted_at)}: ${s.last_test.message}`:'Chưa kiểm tra đọc API. Trạng thái đủ cấu hình không đồng nghĩa đã kết nối thành công.';
+  q('enterpriseTestStatus').textContent=s.last_test?`Lần kiểm tra ${stamp(s.last_test.attempted_at)}: ${s.last_test.message}`:'Chưa kiểm tra kết nối.';
   mappingDirty=false;
  }
  function drawData(result){
@@ -41,8 +47,10 @@
   }catch(e){if(gen===epoch)toast(e.message,true);}
  }
  function showPreview(r){
-  batch=r;const blocked=r.errors.length>0;
-  q('enterprisePreview').innerHTML=`<article class="card"><div class="card-head"><div><h2>Xem trước ${esc(r.source)}</h2><p>${r.count} dòng · ${r.valid_count} hợp lệ · ${r.errors.length} lỗi · ${r.method==='api'?'Đã đọc API, chưa cập nhật':'Đã đọc tệp, chưa cập nhật'}</p></div></div><div class="card-body"><p>${blocked?'Cần sửa hết lỗi rồi xem trước lại. Đợt có lỗi sẽ không được cập nhật một phần.':'Kiểm tra mã, đơn vị, múi giờ và quyền sử dụng dữ liệu trước khi xác nhận.'}</p>${r.errors.length?`<div class="analysis-warning">${r.errors.slice(0,30).map(e=>`<p>${e.row?'Dòng '+e.row+': ':''}${esc(e.message)}</p>`).join('')}</div>`:''}<details open><summary>Dữ liệu đã chuẩn hóa (tối đa 20 dòng đầu)</summary><pre class="notice-raw">${esc(JSON.stringify(r.records.slice(0,20),null,2))}</pre></details><button class="btn primary" id="enterpriseCommit" ${blocked?'disabled':''}>Xác nhận cập nhật khu vực dữ liệu doanh nghiệp</button></div></article>`;
+  batch=r;const blocked=r.errors.length>0,fields=r.records.length?Object.keys(r.records[0]):[];
+  const cell=(key,value)=>value===null||value===''?'—':key.endsWith('_at')||['cutoff','eta_manual'].includes(key)?stamp(value):String(value);
+  q('enterprisePreview').innerHTML=`<article class="card"><div class="card-head"><div><span class="step-label">BƯỚC 3</span><h2>Kiểm tra & lưu ${esc(r.source)}</h2><p>${r.count} dòng · ${r.valid_count} hợp lệ · ${r.errors.length} lỗi</p></div><span class="pill ${blocked?'':'teal'}">${blocked?'Cần sửa dữ liệu':'Sẵn sàng lưu'}</span></div><div class="card-body"><p>${blocked?'Sửa các lỗi bên dưới, sau đó xem trước lại.':'Kiểm tra mã xe, thời gian và đơn vị trước khi lưu.'}</p>${r.errors.length?`<div class="analysis-warning">${r.errors.slice(0,30).map(e=>`<p>${e.row?'Dòng '+e.row+': ':''}${esc(e.message)}</p>`).join('')}</div>`:''}</div>${fields.length?`<div class="table-wrap preview-table"><table><thead><tr>${fields.map(k=>`<th>${esc(names[k]||k)}</th>`).join('')}</tr></thead><tbody>${r.records.slice(0,20).map(row=>`<tr>${fields.map(k=>`<td>${esc(cell(k,row[k]))}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}<div class="card-body ops-form"><p class="muted small">Hiển thị tối đa 20 dòng đầu. ${r.valid_count} dòng hợp lệ sẽ được xử lý khi xác nhận.</p><button class="btn primary" id="enterpriseCommit" ${blocked?'disabled':''}>Xác nhận & lưu dữ liệu</button><details class="help-details"><summary>Xem JSON kỹ thuật</summary><pre class="notice-raw">${esc(JSON.stringify(r.records.slice(0,20),null,2))}</pre></details></div></article>`;
+  q('enterprisePreview').scrollIntoView({behavior:'smooth',block:'start'});
  }
  q('enterpriseSource').addEventListener('change',load);q('enterpriseRefresh').addEventListener('click',()=>busy(q('enterpriseRefresh'),load));
  q('enterpriseMappingForm').addEventListener('input',markDirty);
@@ -50,10 +58,10 @@
   const captured=source;
   const mapping=Object.fromEntries([...q('enterpriseMappings').querySelectorAll('[data-map-field]')].map(el=>[el.dataset.mapField,el.value.trim()]));
   await api('/enterprise/'+captured+'/config',{method:'PUT',body:JSON.stringify({mapping,rows_path:q('enterpriseRowsPath').value.trim()})});
-  await load();toast('Đã lưu ánh xạ dữ liệu.');
+  await load();toast('Đã lưu ghép cột. Bạn có thể xem trước dữ liệu.');
  });});
  q('enterpriseReadFile').addEventListener('click',()=>busy(q('enterpriseReadFile'),async()=>{
-  if(!loaded||mappingDirty)throw Error('Lưu ánh xạ trước khi đọc dữ liệu.');
+  if(!loaded||mappingDirty)throw Error('Bấm Lưu ghép cột trước khi xem trước dữ liệu.');
   const file=q('enterpriseFile').files[0];if(!file)throw Error('Chọn tệp CSV hoặc JSON đã được phép sử dụng.');
   if(file.size>2000000)throw Error('Tệp tối đa 2 MB, mỗi lần tối đa 1.000 dòng.');
   const format=file.name.toLowerCase().endsWith('.json')?'json':file.name.toLowerCase().endsWith('.csv')?'csv':null;
@@ -62,8 +70,8 @@
  }));
  q('enterpriseReadApi').addEventListener('click',()=>{
   const captured=source,gen=epoch;
-  confirm('Đọc nguồn '+captured,'Xác nhận bạn đã được doanh nghiệp cấp quyền đọc endpoint cấu hình ở backend. Hệ thống chỉ đọc để xem trước; chưa cập nhật dữ liệu hoặc gửi lệnh.',async()=>{
-   if(gen!==epoch||mappingDirty)throw Error('Nguồn hoặc ánh xạ đã đổi; kiểm tra lại trước khi đọc.');
+  confirm('Đọc nguồn '+captured,'Bạn đã được doanh nghiệp cấp quyền đọc nguồn này? Dữ liệu sẽ được lấy để xem trước, chưa lưu hoặc gửi lệnh.',async()=>{
+   if(gen!==epoch||mappingDirty)throw Error('Nguồn hoặc cách ghép cột đã đổi; kiểm tra lại trước khi đọc.');
    clearPreview();const result=await post('/enterprise/'+captured+'/preview-api',{confirmed:true});if(gen===epoch)showPreview(result);
   });
  });
@@ -73,7 +81,7 @@
    const selected=batch,gen=epoch;
    confirm('Cập nhật dữ liệu '+selected.source,`Cập nhật ${selected.valid_count} bản ghi vào khu vực doanh nghiệp? Dữ liệu cũ hơn hoặc cùng dấu thời gian được bỏ qua; không ghi đè chuyến mẫu hoặc gửi lệnh.`,async()=>{
     if(gen!==epoch||mappingDirty)throw Error('Nguồn đã đổi. Xem trước lại trước khi cập nhật.');
-    const result=await post('/enterprise/'+selected.source+'/commit',{batch_id:selected.id,confirmed:true});await load();toast(`Đã cập nhật ${result.count} khóa dữ liệu; bỏ qua ${result.ignored_older_or_equal} bản ghi cũ/trùng.`);
+    const result=await post('/enterprise/'+selected.source+'/commit',{batch_id:selected.id,confirmed:true});await load();window.dispatchEvent(new Event('enterpriseDataChanged'));toast(`Đã lưu ${result.count} bản ghi; bỏ qua ${result.ignored_older_or_equal} bản ghi cũ/trùng.`);
    });
   }
   if(button.dataset.enterpriseGps!==undefined){

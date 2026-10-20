@@ -179,3 +179,46 @@ def test_deleting_trip_deactivates_pending_order(client):
     r=client.get('/api/operations').json()
     assert not r['orders'][0]['active'] and r['metrics']['waiting']==0
     assert event(client,o['id'],'receive').status_code==409
+
+@pytest.mark.parametrize('kind,text,field,new_value',[
+    ('pickup','Điểm lấy: Kho mới Bình Dương','origin','Kho mới Bình Dương'),
+    ('delivery','Điểm giao: Depot mới Thủ Đức','destination','Depot mới Thủ Đức'),
+    ('container','Container: UIXX1234567','container_id','UIXX1234567'),
+])
+def test_operational_notice_types(client,kind,text,field,new_value):
+    before=client.get('/api/trips/1').json()
+    r=client.post('/api/notices/preview',json={'trip_id':1,'kind':kind,'text':text})
+    assert r.status_code==200
+    n=r.json();assert n['changes'][0]['field']==field
+    assert client.get('/api/trips/1').json()==before
+    assert client.post('/api/notices/'+n['id']+'/apply',json={'confirmed':True}).status_code==200
+    again=client.post('/api/notices/preview',json={'trip_id':1,'kind':kind,'text':text}).json()
+    assert again['changes']==[]
+    if field in ['origin','destination']:assert client.get('/api/trips/1').json()[field]==new_value
+
+
+def test_vehicle_notice_checks_assignment_and_invalidates_order(client):
+    order=issue(client).json();event(client,order['id'],'receive');event(client,order['id'],'confirm')
+    # Unknown and incompatible vehicles must never bypass the assignment checks.
+    for vehicle in ['UNKNOWN-VEHICLE','61C-123.45']:
+        n=client.post('/api/notices/preview',json={'trip_id':1,'kind':'vehicle','text':'Phương tiện: '+vehicle}).json()
+        assert client.post('/api/notices/'+n['id']+'/apply',json={'confirmed':True}).status_code in [409,422]
+    vehicles=client.get('/api/snapshot').json()['vehicles']
+    t=client.get('/api/trips/1').json()
+    suitable=next(v for v in vehicles if v['available_now'] and v['type']==t['vehicle_type'] and v['capacity']>=t['load'])
+    n=client.post('/api/notices/preview',json={'trip_id':1,'kind':'vehicle','text':'Phương tiện: '+suitable['id']}).json()
+    assert client.post('/api/notices/'+n['id']+'/apply',json={'confirmed':True}).status_code==200
+    assert client.get('/api/trips/1').json()['vehicle_id']==suitable['id']
+    assert event(client,order['id'],'execute').status_code==409
+
+
+def test_incident_creates_alert_without_automatic_vehicle_stop(client):
+    before=client.get('/api/trips/1').json()
+    def notice(text):
+        n=client.post('/api/notices/preview',json={'trip_id':1,'kind':'incident','text':text}).json()
+        assert client.post('/api/notices/'+n['id']+'/apply',json={'confirmed':True}).status_code==200
+    notice('Sự cố: Xe hỏng lốp')
+    assert client.get('/api/trips/1').json()['status']==before['status']
+    assert any(a['kind']=='incident' and a['active'] for a in client.get('/api/alerts').json())
+    notice('Sự cố: Đã xử lý')
+    assert not any(a['kind']=='incident' and a['active'] for a in client.get('/api/alerts').json())

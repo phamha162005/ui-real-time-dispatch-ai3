@@ -1,4 +1,4 @@
-# Kết nối dữ liệu doanh nghiệp v1.4
+# Kết nối dữ liệu doanh nghiệp v1.5
 
 Phiên bản này có connector **chỉ đọc JSON qua HTTPS** và luồng nhập **CSV/JSON → ánh xạ → kiểm tra → xem trước → xác nhận** cho TMS, GPS, ONP. API mặc định tắt. Chưa kết nối doanh nghiệp nào khi bàn giao.
 
@@ -17,10 +17,10 @@ Kho doanh nghiệp tách khỏi chuyến/đội xe mẫu và danh sách xét tá
 1. Mở **Kết nối doanh nghiệp**, chọn TMS/GPS/ONP.
 2. Tải CSV mẫu đúng nguồn. Các dòng mẫu chỉ để thử định dạng, không phải dữ liệu thật.
 3. Với Excel, xuất **CSV UTF-8**. PDF/ảnh không được đọc trực tiếp ở luồng này; cần trích xuất và xác minh riêng.
-4. Trong **Ánh xạ dữ liệu nguồn**, nhập tên cột thực tế tương ứng từng trường nội bộ rồi bấm Lưu ánh xạ. Nếu tên giống mẫu thì giữ nguyên.
-5. Chọn tệp, bấm **Đọc tệp & xem trước**. Kiểm tra các giá trị đã chuẩn hóa và lỗi theo dòng.
+4. Trong **Field Mapping · Ghép cột dữ liệu**, nhập tên cột thực tế tương ứng từng trường nội bộ rồi bấm **Lưu ghép cột**. Nếu tên giống mẫu thì giữ nguyên.
+5. Chọn tệp, bấm **Xem trước tệp**. Kiểm tra các giá trị đã chuẩn hóa và lỗi theo dòng.
 6. Xác nhận cập nhật khu vực doanh nghiệp nếu đúng. Đợt có bất kỳ lỗi nào đều bị chặn toàn bộ; không tự bỏ dòng lỗi.
-7. Xem dữ liệu đã lưu. Với GPS, bấm **Xem vị trí**. Tuổi dữ liệu lấy theo đồng hồ thật và thời điểm nguồn, không theo đồng hồ mô phỏng.
+7. Xem dữ liệu đã lưu. Trên Tổng quan, bấm **Vị trí xe GPS** để xem các xe đã có dữ liệu nguồn; xe có tốc độ 0 được ghi là dừng tại lần ghi nhận. Marker hiển thị thời gian nguồn và cảnh báo dữ liệu cũ; không nội suy hoặc giả lập vị trí xe. Khi đang bật, web đọc lại kho GPS đã lưu mỗi 15 giây, không tự gọi API doanh nghiệp. Với GPS, bấm **Xem vị trí**. Tuổi dữ liệu lấy theo đồng hồ thật và thời điểm nguồn, không theo đồng hồ mô phỏng.
 
 Giới hạn mỗi lần đọc: 2 MB và 1–1.000 dòng. Giao diện hiển thị tối đa 1.000 khóa đầu; tổng kho mỗi nguồn tối đa 10.000 khóa trong bản local. Không cung cấp chức năng lưu trữ toàn bộ lịch sử GPS.
 

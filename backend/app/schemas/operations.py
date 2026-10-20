@@ -7,7 +7,7 @@ class Input(BaseModel):
 
 class NoticeInput(Input):
     trip_id:int
-    kind:Literal['booking','schedule']
+    kind:Literal['booking','schedule','pickup','delivery','container','vehicle','incident']
     text:str=Field(min_length=5,max_length=12000)
 
 class Approval(Input):

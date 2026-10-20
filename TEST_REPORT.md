@@ -60,3 +60,12 @@ Biên bản này thay thế các ghi chú kiểm tra v1.0/v1.1 trước đó; đ
 - Sửa header WWW-Authenticate, hỗ trợ so sánh mật khẩu UTF-8, cấu hình thiếu fail-closed và no-store. Health production chỉ trả trạng thái tối thiểu.
 - Chạy lại 142 bài kiểm thử trên Linux/Python 3.12: đạt. Các kiểm thử hosting gồm trang/API/docs/static phải đăng nhập, thông tin sai bị từ chối, cấu hình thiếu bị chặn, health hoạt động và mật khẩu tiếng Việt được hỗ trợ.
 - Kiểm tra cú pháp JavaScript và kiểm tra logic bản đồ bằng Node: đạt. Chưa triển khai Render hoặc kiểm thử trực tiếp Python 3.11/Windows trong lần này.
+
+
+## Tinh chỉnh v1.5 — ngày 20/10/2026
+
+- Linux/Python 3.12: 147 kiểm thử pytest đạt. Bổ sung kiểm tra thông báo đổi điểm lấy/giao, container, phương tiện và sự cố; giữ bước xác nhận, kiểm tra xe, chặn lệnh cũ và cảnh báo sự cố đến khi xử lý. Không tự dừng xe.
+- Chromium: ghép cột theo tên nguồn; preview dạng bảng; CSV/JSON cả TMS/GPS/ONP; API chưa cấu hình vẫn khóa; xem trước lỗi bị chặn. Các trường bổ sung và JSON kỹ thuật được thu gọn.
+- Tổng quan: không có GPS thì không vẽ xe; 2 bản ghi GPS thử nghiệm cho 1 xe dừng/cũ và 1 xe di chuyển/mới hiển thị đúng vị trí và mốc nguồn. Nền OpenStreetMap được thay bằng ảnh kiểm thử, không gọi API doanh nghiệp thật.
+- Giờ Việt Nam hiển thị đúng ngay cả khi trình duyệt đặt múi giờ Los Angeles; giờ mô phỏng vẫn riêng để tính ETA và hạn phản hồi. Cả 5 loại thông báo mới được đối chiếu và xác nhận trên trình duyệt. 10 trang ở chiều rộng 390 px không tràn ngang toàn trang. Đã xem ảnh desktop/mobile nội bộ.
+- Chưa kiểm chứng bản triển khai Render sau cập nhật; kiểm thử trình duyệt dùng dữ liệu tạm cục bộ.

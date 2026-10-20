@@ -160,8 +160,8 @@ def test_navigation_assets_bust_stale_cache(client):
             if tag=='script' and '/static/vendor/' not in a.get('src',''):self.paths.append(a.get('src',''))
     r=client.get('/');parser=Scripts();parser.feed(r.text)
     assert r.headers['cache-control']=='no-store'
-    assert parser.paths and all('?v=1.4.1' in p for p in parser.paths)
+    assert parser.paths and all('?v=1.5.0' in p for p in parser.paths)
     for path in parser.paths:
         a=client.get(path);assert a.status_code==200 and a.headers['cache-control']=='no-store'
     assert client.get('/api/enterprise/status').headers['cache-control']=='no-store'
-    assert "enterprise:['Kết nối doanh nghiệp'" in client.get('/static/app.js?v=1.4.1').text
+    assert "enterprise:['Kết nối doanh nghiệp'" in client.get('/static/app.js?v=1.5.0').text

@@ -2,10 +2,11 @@
 (function(){
  const q=id=>document.getElementById(id);
  let state=null,notice=null,orderContext=null,selectSignature='',orderSignature='';
+ const noticeNames={schedule:'Lịch tàu',booking:'Booking',pickup:'Đổi điểm lấy',delivery:'Đổi điểm giao',container:'Đổi container',vehicle:'Đổi phương tiện',incident:'Sự cố xe'};
  const orderStatuses={sent:'Đã gửi',received:'Đã nhận',confirmed:'Đã xác nhận',rejected:'Từ chối',executing:'Đang thực hiện'};
  const actionNames={continue:'Tiếp tục',hold:'Dừng an toàn',adjust:'Điều chỉnh'};
  const stamp=v=>v?`${shortTime(v)} ${date(v)}`:'—';
- const display=(v,field)=>v&&['cutoff','ship_eta','ship_etd'].includes(field)?`${time(v)} ${date(v)} (VN)`:typeof v==='boolean'?(v?'Đã hủy':'Hoạt động'):(v||'Chưa có');
+ const display=(v,field)=>field==='incident'&&!v?'Không có / đã xử lý':v&&['cutoff','ship_eta','ship_etd'].includes(field)?`${time(v)} ${date(v)} (VN)`:typeof v==='boolean'?(v?'Đã hủy':'Hoạt động'):(v||'Chưa có');
  function trip(id){return state?.trips.find(t=>String(t.id)===String(id));}
  function tripOptions(id,trips){const old=q(id).value;q(id).innerHTML=trips.map(t=>`<option value="${t.id}">${esc(t.code)} · ${esc(t.vehicle_id||'Chưa phân công')} · ${esc(t.origin)} → ${esc(t.destination)}</option>`).join('');if(trips.some(t=>String(t.id)===old))q(id).value=old;}
  function setOrderContext(){
@@ -25,7 +26,7 @@
   q('orderHistory').innerHTML=orders.length?`<table><thead><tr><th>CHUYẾN / PHIÊN BẢN</th><th>NGƯỜI NHẬN</th><th>HIỆU LỰC</th><th>GỬI – NHẬN – XÁC NHẬN</th><th>PHẢN HỒI</th><th>CHI TIẾT</th></tr></thead><tbody>${orders.map(o=>`<tr><td><b>${esc(o.trip_code)} · v${o.version}</b><span class="subcell">${esc(o.vehicle_id)} · ${actionNames[o.action]}</span></td><td>${esc(o.driver)}</td><td><span class="pill ${o.active?'teal':''}">${o.active?'Hiện hành':'Hết hiệu lực'}</span><span class="subcell">${orderStatuses[o.status]}${o.stale?' · Cần phát hành lại':''}</span></td><td>Gửi ${stamp(o.sent_at)}<span class="subcell">Nhận ${stamp(o.received_at)}<br>Xác nhận ${stamp(o.confirmed_at)}</span></td><td>${o.response_minutes===null?`Chưa xác nhận${o.active?' · '+o.elapsed_minutes.toFixed(1)+' phút':''}`:o.response_minutes.toFixed(1)+' phút'}${o.overdue?'<span class="subcell negative">Quá hạn phản hồi</span>':''}</td><td><button class="table-btn" data-order-detail="${o.id}">Nhật ký</button></td></tr>`).join('')}</tbody></table>`:'<div class="no-data">Chưa phát hành lệnh. Chọn chuyến và kiểm tra nội dung để bắt đầu.</div>';
   if(orderContext){const latest=trip(orderContext.trip_id);const version=Math.max(0,...orders.filter(o=>o.trip_id===orderContext.trip_id).map(o=>o.version));if(latest&&(latest.revision!==orderContext.trip_revision||version!==orderContext.expected_version))q('orderTripInfo').innerHTML+=q('orderTripInfo').innerHTML.includes('Nạp lại dữ liệu')?'':'<p class="negative">Chuyến hoặc phiên bản đã đổi. Bấm Nạp lại dữ liệu trước khi phát hành.</p>';}
   renderInbox();
-  q('noticeHistory').innerHTML=s.operations.notices.map(n=>`<div class="log-row"><b>${esc(n.trip_code)} · ${n.kind==='schedule'?'Lịch tàu':'Booking'}</b><small>${stamp(n.created_at)} · ${n.status==='applied'?'Đã cập nhật':'Chờ xác minh'} · ${n.changes.length} thay đổi</small><button class="table-btn" data-notice-detail="${esc(n.id)}">Xem đối chiếu</button></div>`).join('')||'<div class="no-data">Chưa tiếp nhận thông báo.</div>';
+  q('noticeHistory').innerHTML=s.operations.notices.map(n=>`<div class="log-row"><b>${esc(n.trip_code)} · ${esc(noticeNames[n.kind]||n.kind)}</b><small>${stamp(n.created_at)} · ${n.status==='applied'?'Đã cập nhật':'Chờ xác minh'} · ${n.changes.length} thay đổi</small><button class="table-btn" data-notice-detail="${esc(n.id)}">Xem đối chiếu</button></div>`).join('')||'<div class="no-data">Chưa tiếp nhận thông báo.</div>';
  }
  function renderInbox(){
   if(!state)return;const driver=q('inboxDriver').value.trim();
@@ -43,13 +44,15 @@
   const t=trip(q('noticeTrip').value);if(!t)return toast('Cần chọn chuyến chưa hoàn thành.',true);
   q('noticeKind').value=kind;
   const cutoff=localInput(new Date(new Date(t.cutoff).getTime()+120*60000).toISOString())+':00+07:00';
-  q('noticeText').value=kind==='schedule'?`Tên tàu: UI SAMPLE VESSEL\nChuyến tàu: 026E\nCut-off: ${cutoff}\nĐiểm giao: ${t.destination}`:`Booking: BK-${t.code}\nTrạng thái: Hủy\nĐiểm lấy: ${t.origin}`;
+  const samples={schedule:`Tên tàu: UI SAMPLE VESSEL\nChuyến tàu: 026E\nCut-off: ${cutoff}`,booking:`Booking: BK-${t.code}\nTrạng thái: Hủy`,pickup:'Điểm lấy: Kho mới Bình Dương',delivery:'Điểm giao: Depot mới Thủ Đức',container:'Container: UIXX1234567',vehicle:`Phương tiện: ${state.vehicles.find(v=>v.available_now&&v.type===t.vehicle_type&&v.capacity>=t.load)?.id||t.vehicle_id||'NHAP-MA-XE'}`,incident:'Sự cố: Xe hỏng lốp, cần điều vận hỗ trợ'};
+  q('noticeText').value=samples[kind]||'';
+
  }
  function showPilot(r){
   q('pilotResult').innerHTML=`<div class="notice"><strong>${r.recommended?'Ưu tiên xe '+esc(r.recommended):'Chưa có xe đáp ứng đầy đủ ràng buộc'}</strong><p>${esc(r.formula)}</p><p>Đã xét ${r.input_count} xe · ${r.feasible_count} xe hợp lệ · ${r.rejected.length} xe bị loại · Hiển thị ${r.returned_count} phương án tốt nhất</p><p>Tmax = ${r.max_tours} tour · Kmax = ${r.max_km} km</p></div><div class="option-grid">${r.options.map((o,i)=>`<article class="option-card ${i===0?'recommended':''}"><span class="pill teal">Thứ hạng ${i+1}</span><h3>${esc(o.plate)}</h3><div class="option-score">${o.display_score.toFixed(3)}<small> điểm S</small></div><div class="option-details">Tour: ${o.tours} · Km: ${o.km}<br>Vị trí: ${o.at_yard?'Bãi Xe U&I':'Ngoài bãi xe'}<br>S = (${o.tour_component.toFixed(3)} + ${o.km_component.toFixed(3)} + ${o.position_component}) / 3</div><p>${i===0?'Điểm thấp nhất trong các xe hợp lệ. Nhân viên điều vận kiểm tra điều kiện thực tế trước khi lựa chọn.':'Đáp ứng các điều kiện đã đánh dấu; đứng sau phương án ưu tiên theo điểm S.'}</p></article>`).join('')}</div>${r.rejected.length?'<div class="analysis-warning"><b>Xe bị loại</b>'+r.rejected.map(v=>`<p>${esc(v.plate)}: ${v.reasons.map(esc).join('; ')}</p>`).join('')+'</div>':''}<details class="fleet-ranking"><summary>Xem toàn bộ ${r.feasible_count} xe hợp lệ theo thứ hạng</summary><div class="table-wrap"><table><thead><tr><th>HẠNG</th><th>XE</th><th>ĐIỂM S</th></tr></thead><tbody>${r.ranking.map((v,i)=>`<tr><td>${i+1}</td><td>${esc(v.plate)}</td><td>${v.display_score.toFixed(3)}</td></tr>`).join('')}</tbody></table></div></details><p class="analysis-note">${esc(r.note)} Kết quả này không tự thay đổi phân công trong đội xe vận hành mẫu.</p>`;
  }
  q('noticeForm').addEventListener('submit',e=>{e.preventDefault();busy(e.submitter,async()=>{showNotice(await post('/notices/preview',{trip_id:Number(q('noticeTrip').value),kind:q('noticeKind').value,text:q('noticeText').value}));await refresh();});});
- q('sampleSchedule').addEventListener('click',()=>sample('schedule'));q('sampleBooking').addEventListener('click',()=>sample('booking'));
+ q('sampleSchedule').addEventListener('click',()=>sample('schedule'));q('sampleBooking').addEventListener('click',()=>sample('booking'));q('sampleNotice').addEventListener('click',()=>sample(q('noticeKind').value));
  q('orderTrip').addEventListener('change',setOrderContext);q('reloadOrder').addEventListener('click',()=>{setOrderContext();toast('Đã nạp dữ liệu mới nhất. Kiểm tra nội dung lệnh trước khi phát hành.');});
  q('orderForm').addEventListener('submit',e=>{
   e.preventDefault();if(!orderContext)return toast('Chưa có chuyến phù hợp để phát hành.',true);

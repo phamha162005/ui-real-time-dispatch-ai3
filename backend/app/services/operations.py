@@ -59,7 +59,7 @@ def pilot_analysis(vehicles):
         options.append({**v,'score':round(score,6),'display_score':round(score,3),'tour_component':round(tn,6),'km_component':round(kn,6),'position_component':p,'_sort':score})
     options.sort(key=lambda x:(x['_sort'],x['plate']))
     for x in options:del x['_sort']
-    return {'options':options[:3],'ranking':options,'input_count':len(vehicles),'feasible_count':len(options),'returned_count':min(3,len(options)),'rejected':rejected,'recommended':options[0]['plate'] if options else None,'max_tours':tours,'max_km':km,'formula':'Sᵢ = (Tᵢ/Tmax + Kᵢ/Kmax + Pᵢ)/3; P = 0 ở Bãi Xe U&I, 1 ở nơi khác. Điểm thấp được ưu tiên.','note':'Xếp hạng theo dữ liệu đầu vào, đề xuất tối đa 03 phương án. Km lũy kế không phải km phát sinh/chạy rỗng. Các ràng buộc phải được kiểm tra trước khi xếp hạng. Không phải tối ưu tuyến hoặc mô hình AI được huấn luyện. Nếu Tmax/Kmax = 0, thành phần tương ứng bằng 0 cho mọi xe.'}
+    return {'options':options[:3],'ranking':options,'input_count':len(vehicles),'feasible_count':len(options),'returned_count':min(3,len(options)),'rejected':rejected,'recommended':options[0]['plate'] if options else None,'max_tours':tours,'max_km':km,'formula':'Sᵢ = (Tᵢ/Tmax + Kᵢ/Kmax + Pᵢ)/3; P = 0 ở bãi xe, 1 ở nơi khác. Điểm thấp được ưu tiên.','note':'Xếp hạng theo dữ liệu đầu vào, đề xuất tối đa 03 phương án. Km lũy kế không phải km phát sinh/chạy rỗng. Các ràng buộc phải được kiểm tra trước khi xếp hạng. Không phải tối ưu tuyến hoặc mô hình AI được huấn luyện. Nếu Tmax/Kmax = 0, thành phần tương ứng bằng 0 cho mọi xe.'}
 
 def order_rows(db):
     return [dict(json.loads(x['payload']),id=x['id']) for x in db.execute('SELECT * FROM orders ORDER BY id DESC')]

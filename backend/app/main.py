@@ -14,7 +14,7 @@ ROOT=Path(__file__).resolve().parents[2]
 load_dotenv(ROOT/'.env')
 
 def create_app(database_path=None):
-    app=FastAPI(docs_url=None,redoc_url=None,title='U&I Real-Time Dispatch AI — Demo',version='1.4.1',description='Bản demo dùng dữ liệu giả lập. Bộ máy quy tắc hỗ trợ quyết định; chưa có mô hình AI huấn luyện. Không gửi lệnh điều xe thật. Khi triển khai công khai, bật APP_ENV=production và cấu hình DEMO_USERNAME/DEMO_PASSWORD.')
+    app=FastAPI(docs_url=None,redoc_url=None,title='Dispatch AI',version='1.6.0',description='Bản demo dùng dữ liệu giả lập. Bộ máy quy tắc hỗ trợ quyết định; chưa có mô hình AI huấn luyện. Không gửi lệnh điều xe thật. Khi triển khai công khai, bật APP_ENV=production và cấu hình DEMO_USERNAME/DEMO_PASSWORD.')
     path=database_path or os.getenv('DATABASE_PATH','data/dispatch.sqlite3')
     if not Path(path).is_absolute(): path=ROOT/path
     app.state.store=Store(path)
@@ -43,7 +43,7 @@ def create_app(database_path=None):
                 except (ValueError, UnicodeDecodeError):
                     valid=False
             if not valid:
-                return JSONResponse(status_code=401, content={'detail':'Authentication required.'}, headers={'WWW-Authenticate':'Basic realm="U&I Dispatch Demo", charset="UTF-8"', 'Cache-Control':'no-store'})
+                return JSONResponse(status_code=401, content={'detail':'Authentication required.'}, headers={'WWW-Authenticate':'Basic realm="Dispatch AI", charset="UTF-8"', 'Cache-Control':'no-store'})
         response=await call_next(request)
         if request.url.path=='/' or request.url.path.startswith(('/api/','/static/')):
             response.headers['Cache-Control']='no-store'

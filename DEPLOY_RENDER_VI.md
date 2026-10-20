@@ -1,4 +1,4 @@
-# Đưa U&I Real-Time Dispatch AI lên Render (bản demo GVHD)
+# Đưa Dispatch AI lên Render (bản demo GVHD)
 
 ## Bản triển khai này có gì?
 - Bảo vệ website, tệp frontend và API bằng tài khoản/mật khẩu HTTP Basic khi `APP_ENV=production`.
@@ -23,7 +23,7 @@
 ## Giới hạn cần biết
 - Gói miễn phí có thể đưa dịch vụ vào trạng thái ngủ sau thời gian không hoạt động; lần mở đầu có thể chậm.
 - Dữ liệu mẫu và các thay đổi trong buổi chấm có thể mất sau khi khởi động lại hoặc triển khai lại. Dùng chức năng khôi phục dữ liệu mẫu để chuẩn bị buổi demo.
-- Tài khoản HTTP Basic là cách bảo vệ đơn giản cho bản trình diễn nhỏ, không phải hệ thống tài khoản nhiều người dùng. Không dùng với dữ liệu nhạy cảm hay dữ liệu thật của U&I.
+- Tài khoản HTTP Basic là cách bảo vệ đơn giản cho bản trình diễn nhỏ, không phải hệ thống tài khoản nhiều người dùng. Không dùng với dữ liệu nhạy cảm hay dữ liệu thật của doanh nghiệp.
 - Không bật `TMS_READ_ENABLED`, `GPS_READ_ENABLED` hoặc `ONP_READ_ENABLED`, không nhập token doanh nghiệp vào bản demo.
 - Khi kết thúc buổi chấm, có thể tạm dừng hoặc xóa dịch vụ trong Render.
 

@@ -1,4 +1,4 @@
-import json, sqlite3, threading
+import json, sqlite3, threading, os
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -10,6 +10,7 @@ def utcnow(): return datetime.now(timezone.utc)
 
 class Store:
     def __init__(self,path):
+        self.live_clock=os.getenv("APP_ENV","local").lower()=="production" or os.getenv("CLOCK_MODE","live").lower()!="simulation"
         self.path=str(path)
         Path(path).parent.mkdir(parents=True,exist_ok=True)
         self.lock=threading.RLock()
@@ -50,8 +51,8 @@ class Store:
         db.execute("DELETE FROM meta WHERE key LIKE 'notice-baseline:%'")
         db.execute("DELETE FROM meta WHERE key='comparison-fleet'")
         db.execute("DELETE FROM meta WHERE key LIKE 'enterprise-%'")
-        base=datetime.now(VN).replace(hour=8,minute=0,second=0,microsecond=0)
-        clock={"now":base.isoformat(),"base":base.isoformat(),"running":False,"speed":1,"real_anchor":utcnow().isoformat()}
+        base=datetime.now(VN).replace(microsecond=0) if self.live_clock else datetime.now(VN).replace(hour=8,minute=0,second=0,microsecond=0)
+        clock={"now":base.isoformat(),"base":base.isoformat(),"running":self.live_clock,"speed":1,"real_anchor":utcnow().isoformat()}
         self.put(db,'clock',clock)
         for i,t in enumerate(MockDataAdapter().fetch_trips(base)):
             t['remaining_minutes']=t['travel_minutes']+t['handling_minutes']+t['delay_minutes']
@@ -64,6 +65,11 @@ class Store:
         c=self.get(db,'clock'); old=dt(c['now']);real=utcnow()
         delta=max(0,(real-dt(c['real_anchor'])).total_seconds())*c['speed'] if c['running'] else 0
         now=old+timedelta(seconds=delta,minutes=advance)
+        if self.live_clock:
+            now=real.astimezone(VN)
+            delta=max(0,(now-old).total_seconds())
+            advance=0;c['running']=True;c['speed']=1
+        c['mode']='live' if self.live_clock else 'simulation' 
         for t in self.rows(db):
             progress(t,old,now)
             self.save_trip(db,t,t['id'])

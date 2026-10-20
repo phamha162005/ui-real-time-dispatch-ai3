@@ -119,6 +119,7 @@ def get_clock(request:Request): return get_snapshot(request)['clock']
 @router.post('/clock',tags=['Mô phỏng'])
 def control_clock(payload:ClockCommand,request:Request):
     s=request.app.state.store
+    if s.live_clock:raise HTTPException(409,'Hệ thống đang dùng giờ thực; không hỗ trợ tua hoặc dừng thời gian.')
     with s.tx() as db:
         c=s.tick(db)
         if payload.action in ['start','resume']: c['running']=True

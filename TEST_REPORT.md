@@ -69,3 +69,12 @@ Biên bản này thay thế các ghi chú kiểm tra v1.0/v1.1 trước đó; đ
 - Tổng quan: không có GPS thì không vẽ xe; 2 bản ghi GPS thử nghiệm cho 1 xe dừng/cũ và 1 xe di chuyển/mới hiển thị đúng vị trí và mốc nguồn. Nền OpenStreetMap được thay bằng ảnh kiểm thử, không gọi API doanh nghiệp thật.
 - Giờ Việt Nam hiển thị đúng ngay cả khi trình duyệt đặt múi giờ Los Angeles; giờ mô phỏng vẫn riêng để tính ETA và hạn phản hồi. Cả 5 loại thông báo mới được đối chiếu và xác nhận trên trình duyệt. 10 trang ở chiều rộng 390 px không tràn ngang toàn trang. Đã xem ảnh desktop/mobile nội bộ.
 - Chưa kiểm chứng bản triển khai Render sau cập nhật; kiểm thử trình duyệt dùng dữ liệu tạm cục bộ.
+
+
+## Bản v1.6.0 — không gian điều vận Dispatch AI
+
+- Đổi thương hiệu hiển thị thành Dispatch AI. Bỏ đồng hồ kịch bản, nút tua thời gian, nạp tình huống thử, khôi phục mẫu và liên kết kiểm thử API khỏi giao diện điều vận. Tài liệu kỹ thuật vẫn truy cập riêng và có xác thực khi hosting.
+- Giờ thực là mặc định cả local và production. Production luôn ghi đè cấu hình simulation cũ; API tua/dừng bị chặn. Kiểm thử bổ sung xác minh thời gian thật, tiến độ và hạn phản hồi 5 phút không cần thao tác bắt đầu. Kiểm thử API mô phỏng dùng biến CLOCK_MODE riêng trong môi trường phát triển.
+- Bản đồ GPS: danh sách và marker liên kết, tìm biển số, lọc xe di chuyển/dừng/dữ liệu cũ, gom marker gần nhau, ghi nhớ góc nhìn GPS, tách khỏi điểm lấy/giao và Google Directions. Không tạo vị trí xe khi chưa có dữ liệu nguồn.
+- Chromium ở chế độ production có xác thực, múi giờ trình duyệt Los Angeles: kiểm tra nguồn GPS trống, 3 mẫu GPS mới/cũ, xe dừng, cluster, chọn xe, lọc/tìm/xóa lọc, tọa độ tùy chỉnh, phóng to/thu gọn/Escape, thông báo và gửi/nhận/xác nhận lệnh, kết nối dữ liệu, 9 trang ở chiều rộng 390 px không tràn ngang. Nền OSM được thay bằng ảnh kiểm thử; chưa gọi API doanh nghiệp thật. Đã xem ảnh desktop/mobile nội bộ.
+- Linux/Python 3.12: 150 kiểm thử pytest đạt; kiểm tra JavaScript và logic tọa độ/lọc xe bằng Node đạt. Chưa trực tiếp kiểm chứng Render sau cập nhật.

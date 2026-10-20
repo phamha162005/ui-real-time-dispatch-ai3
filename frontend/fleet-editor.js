@@ -30,7 +30,6 @@
  q('pilotInputs').addEventListener('input',changed);
  q('pilotInputs').addEventListener('click',e=>{const b=e.target.closest('[data-fleet-delete]');if(!b)return;const rows=inputs();rows.splice(Number(b.dataset.fleetDelete),1);draw(rows);});
  q('fleetAdd').addEventListener('click',()=>{if(!ready)return;const rows=inputs();rows.push({plate:'',tours:0,km:0,at_yard:false,...Object.fromEntries(Object.keys(checks).map(k=>[k,false]))});draw(rows);q('pilotInputs').lastElementChild.querySelector('input').focus();});
- q('pilotReset').addEventListener('click',()=>{if(!ready)return;confirm('Nạp 03 xe mẫu báo cáo','Thay danh sách đang nhập bằng bộ 03 xe minh họa? Bấm Lưu danh sách hoặc Phân tích để lưu bộ mẫu.',()=>{draw(defaults);});});
  q('fleetSave').addEventListener('click',()=>{const p=data();if(p)busy(q('fleetSave'),async()=>{await save(p,version);toast('Đã lưu danh sách xe.');});});
  q('fleetImport').addEventListener('click',()=>{if(ready)q('fleetFile').click();});
  q('fleetFile').addEventListener('change',()=>busy(q('fleetImport'),async()=>{
